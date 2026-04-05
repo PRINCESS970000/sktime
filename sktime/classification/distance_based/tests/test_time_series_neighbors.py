@@ -149,3 +149,35 @@ def test_knn_kneighbors():
     assert dist.shape == (5, 1)
     assert isinstance(ind, np.ndarray)
     assert ind.shape == (5, 1)
+    def test_knn_params_and_single_sample_consistency():
+    """
+    Test KNN consistency: parameter setting and single sample prediction.
+    This ensures the model handles individual samples without crashing.
+    """
+    from sktime.classification.distance_based import KNeighborsTimeSeriesClassifier
+    from sktime.datasets import load_unit_test
+    import numpy as np
+
+    # 1. Parameter Consistency Check
+    # Testing if the model correctly retains different k values
+    for k in [1, 5]:
+        clf = KNeighborsTimeSeriesClassifier(n_neighbors=k)
+        assert clf.n_neighbors == k, f"Failed to set n_neighbors to {k}"
+
+    # 2. Single Sample Prediction Check
+    # Loading small dataset for speed
+    X_train, y_train = load_unit_test(split="train", return_X_y=True)
+    X_test, _ = load_unit_test(split="test", return_X_y=True)
+    
+    # Init and Fit
+    clf_test = KNeighborsTimeSeriesClassifier(n_neighbors=3)
+    clf_test.fit(X_train, y_train)
+    
+    # Predicting on a single sample (common edge case)
+    # Using iloc[[0]] to keep the DataFrame structure for sktime compatibility
+    single_sample = X_test.iloc[[0]]
+    y_pred = clf_test.predict(single_sample)
+    
+    # 3. Assertions (The Proof)
+    assert isinstance(y_pred, np.ndarray), "Prediction should be a numpy array"
+    assert len(y_pred) == 1, "Should predict exactly 1 sample"
